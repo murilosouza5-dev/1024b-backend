@@ -55,7 +55,7 @@ app.post("/cadastro_produto", async (req, res) => {
             await connection.execute(`insert into pessoa values (?,?)`, [id, nome])
         console.log(resultado)
         res.status(201).json({ mensagem: "Sucesso" })
-    } catch (err) {
+    } catch (err) { 
         console.log(err);
         if (err instanceof Error && 'code' in err && err.code === 'ECONNREFUSED') {
             res.status(500).json({ mensagem: "Erro: Ligue o LARAGON!" })

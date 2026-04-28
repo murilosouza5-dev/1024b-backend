@@ -1,138 +1,105 @@
-import mysql from 'mysql2/promise';
 import express from 'express'
+import MysqlErrorHandle from './mysql_error_handle.js'
+import connection from './mysql_connection_handle.js'
+
 const app = express()
 app.use(express.json())
-const connection = mysql.createPool({
-    host: 'localhost',
-    user: 'root',
-    database: 'aula1',
-});
-app.get("/listar_produtos", async (req, res) => {
-    try {
-        const [resultado, campos] =
-            await connection.execute(`SELECT * FROM produto`)
-        console.log(resultado)
-        res.status(200).json(resultado)
-    } catch (err) {
-        console.log(err);
-        if (err instanceof Error && 'code' in err && err.code === 'ECONNREFUSED') {
-            res.status(500).json({ mensagem: "Erro: Ligue o LARAGON!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_BAD_DB_ERROR') {
-            res.status(500).json({ mensagem: "Erro: Crie o banco de dados ou confira se o nome está correto!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_ACCESS_DENIED_ERROR') {
-            res.status(500).json({ mensagem: "Erro: Confira o Usuario e Senha da Conexão!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_NO_SUCH_TABLE') {
-            res.status(500).json({ mensagem: "Erro: Confira o nome da tabela no banco ou crie a tabela!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_PARSE_ERROR') {
-            res.status(500).json({ mensagem: "Erro: Confira o código SQL do EXECUTE!" })
-        }
-        else {
-            res.status(500).json({ mensagem: "Erro no servidor!" })
-        }
-    }
-})//listar
-app.post("/cadastro_produto", async (req, res) => {
-    try {
-        //const preparacao = await connection.prepare("select * from pessoa");
-        const {id,nome,categoria,preco,data_criacao,data_modificacao  } = req.body;
-        //Valide se o id e o nome foram passados corretamente. (Algum valor)
-        //Se não foram, retorne o código 400 com a mensagem "id ou nome inválidos"
-        //Não deixe o código executar a parte de baixo quando for inválido.
 
-        if (!id || !nome || !categoria || !preco || !data_criacao || !data_modificacao) {
-            return res.status(500).json({ mensagem: "id, nome, categoria, preco, data_criacao e data_modificacao são obrigatórios!" })
-            
-        }
-        const [resultado] =
-            await connection.execute(`insert into produto values (?,?,?,?,?,?)`, [id, nome, categoria, preco, data_criacao, data_modificacao])
-        console.log(resultado)
-        res.status(201).json({ mensagem: "Sucesso" })
-    } catch (err) {
-        console.log(err);
-        if (err instanceof Error && 'code' in err && err.code === 'ECONNREFUSED') {
-            res.status(500).json({ mensagem: "Erro: Ligue o LARAGON!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_BAD_DB_ERROR') {
-            res.status(500).json({ mensagem: "Erro: Crie o banco de dados ou confira se o nome está correto!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_ACCESS_DENIED_ERROR') {
-            res.status(500).json({ mensagem: "Erro: Confira o Usuario e Senha da Conexão!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_NO_SUCH_TABLE') {
-            res.status(500).json({ mensagem: "Erro: Confira o nome da tabela no banco ou crie a tabela!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_PARSE_ERROR') {
-            res.status(500).json({ mensagem: "Erro: Confira o código SQL do EXECUTE!" })
-        }
-        else {
-            res.status(500).json({ mensagem: "Erro no servidor!" })
-        }
-    }
-})//Inserir
+/*Crie uma rota '/cliente _data_pedido' que retorne os clientes e  a data que os mesmos fizeram
+o pedido. Pra realizar isso, utilize INNER JOIN para juntar as tabelas.
+Utilize o banco de dados chamado dbteremercado
 
-app.get("/listar_produtos_informatica", async (req, res) => {
-    try {
-        const [resultado, campos] =
-            await connection.execute(`SELECT * FROM produto WHERE categoria = 'informatica'`);
-        console.log(resultado)
-        res.status(200).json(resultado)
-    } catch (err) {
-        console.log(err);
-        if (err instanceof Error && 'code' in err && err.code === 'ECONNREFUSED') {
-            res.status(500).json({ mensagem: "Erro: Ligue o LARAGON!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_BAD_DB_ERROR') {
-            res.status(500).json({ mensagem: "Erro: Crie o banco de dados ou confira se o nome está correto!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_ACCESS_DENIED_ERROR') {
-            res.status(500).json({ mensagem: "Erro: Confira o Usuario e Senha da Conexão!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_NO_SUCH_TABLE') {
-            res.status(500).json({ mensagem: "Erro: Confira o nome da tabela no banco ou crie a tabela!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_PARSE_ERROR') {
-            res.status(500).json({ mensagem: "Erro: Confira o código SQL do EXECUTE!" })
-        }
-        else {
-            res.status(500).json({ mensagem: "Erro no servidor!" })
-        }
-    }
-})
-
-app.get("/listar_produtos_caros", async (req, res) => {
-    try {
-        const [resultado, campos] =
-            await connection.execute(`SELECT * FROM produto WHERE preco > 100`);
-        console.log(resultado)
-        res.status(200).json(resultado)
-    } catch (err) {
-        console.log(err);
-        if (err instanceof Error && 'code' in err && err.code === 'ECONNREFUSED') {
-            res.status(500).json({ mensagem: "Erro: Ligue o LARAGON!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_BAD_DB_ERROR') {
-            res.status(500).json({ mensagem: "Erro: Crie o banco de dados ou confira se o nome está correto!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_ACCESS_DENIED_ERROR') {
-            res.status(500).json({ mensagem: "Erro: Confira o Usuario e Senha da Conexão!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_NO_SUCH_TABLE') {
-            res.status(500).json({ mensagem: "Erro: Confira o nome da tabela no banco ou crie a tabela!" })
-        }
-        else if (err instanceof Error && 'code' in err && err.code === 'ER_PARSE_ERROR') {
-            res.status(500).json({ mensagem: "Erro: Confira o código SQL do EXECUTE!" })
-        }
-        else {
-            res.status(500).json({ mensagem: "Erro no servidor!" })
-        }
-    }
-})
+//SELECT nome,datapedido FROM clientes c
+//                       INNER JOIN pedido p ON c.idclientes=p.clientes_idclientes
 
 
+2......
+crie uma rota chamada '/pedidos_2026' que retorne
+idclientes, nome, cidade, idade, idpedidos, datapedido dos pedidos feitos no ano
+ de 2026
+
+3.Crie uma rota chamada '/quantidade_pedidos' que retorne 
+ um json no formato '{quantidade_pedidos:100}' com a quantidade de pedidos cadastrados
+na tabela pedidos. USE O COMANDO COUNT(*) para contar as quantidades.
+
+4 Crie uma rota chamada '/quantidade_pedidos_clientes' que retorne
+um json no formato '{quantidade_pedidos:100}' que retorne 
+todos os clientes e a quantidade de pedidos que cada cliente fez
+*/
+
+// app.get("/pessoas", async (req, res) => {
+//     try {
+//         const [resultado, campos] =
+//             await connection.execute(`SELECT * FROM pessoa`)
+//         console.log(resultado)
+//         res.status(200).json(resultado)
+//     } catch (err) {
+//         const mysqlErrorHandle = new MysqlErrorHandle(err,res)
+//         mysqlErrorHandle.validar()
+//     }
+// })//listar
+// app.post("/pessoas", async (req, res) => {
+//     try {
+//         const { id, nome } = req.body
+//         if (!id || !nome)
+//             return res.status(500).json({ mensagem: "Erro: Os dados de id ou nome estão incorretos!" })
+//         const [resultado, campos] =
+//             await connection.execute(`insert into pessoa values (?,?)`, [id, nome])
+//         console.log(resultado)
+//         res.status(201).json({ mensagem: "Sucesso" })
+//     } catch (err) {
+//         const mysqlErrorHandle = new MysqlErrorHandle(err,res)
+//         mysqlErrorHandle.validar()
+//     }
+// })//Inserir
+// app.post("/cadastro_produto", async (req, res) => {
+//     try {
+//         const { id, nome, categoria, preco, data_criacao, data_modificacao } = req.body
+//         if (!id || !nome || !categoria || !preco || !data_criacao || !data_modificacao)
+//             return res.status(500).json({ mensagem: "Erro: Os dados de id,nome,categoria,preco,data_criacao,data_modificacao estão incorretos!" })
+//         const [resultado, campos] =
+//             await connection.execute(`insert into produto values (?,?,?,?,?,?)`, [id, nome, categoria, preco, data_criacao, data_modificacao])
+//         console.log(resultado)
+//         res.status(201).json({ mensagem: "Sucesso" })
+//     } catch (err) {
+//         const mysqlErrorHandle = new MysqlErrorHandle(err,res)
+//         mysqlErrorHandle.validar()
+//     }
+// })
+// app.get("/listar_produtos", async (req, res) => {
+//     try {
+//         const [resultado, campos] =
+//             await connection.execute(`SELECT * FROM produto`)
+//         console.log(resultado)
+//         res.status(200).json(resultado)
+//     } catch (err) {
+//         const mysqlErrorHandle = new MysqlErrorHandle(err,res)
+//         mysqlErrorHandle.validar()
+//     }
+// })
+
+// app.get("/listar_produtos_informatica", async (req, res) => {
+//     try {
+//         const [resultado, campos] =
+//             await connection.execute(`SELECT * FROM produto WHERE categoria='informática'`)
+//         console.log(resultado)
+//         res.status(200).json(resultado)
+//     } catch (err) {
+//         const mysqlErrorHandle = new MysqlErrorHandle(err,res)
+//         mysqlErrorHandle.validar()
+//     }
+// })
+
+// app.get("/listar_produtos_caros", async (req, res) => {
+//     try {
+//         const [resultado, campos] =
+//             await connection.execute(`SELECT * FROM produto WHERE preco>100`)
+//         res.status(200).json(resultado)
+//     } catch (err) {
+//         const mysqlErrorHandle = new MysqlErrorHandle(err,res)
+//         mysqlErrorHandle.validar()
+//     }
+//})
 //Criar o servidor
 app.listen(8000, () => {
     console.log("Servidor iniciado na porta 8000")

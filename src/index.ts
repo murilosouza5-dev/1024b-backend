@@ -1,37 +1,25 @@
 import express from 'express'
 import MysqlErrorHandle from './mysql_error_handle.js'
 import connection from './mysql_connection_handle.js'
+import type { RowDataPacket } from 'mysql2'
 
 const app = express()
 app.use(express.json())
 
-/*Crie uma rota '/cliente _data_pedido' que retorne os clientes e  a data que os mesmos fizeram
-o pedido. Pra realizar isso, utilize INNER JOIN para juntar as tabelas.
-Utilize o banco de dados chamado dbteremercado
- 
-SELECT nome,datapedido FROM clientes c
-INNER JOIN pedido p ON c.idclientes=p.clientes_idclientes
- 
- 
-2......
-crie uma rota chamada '/pedidos_2026' que retorne
-idclientes, nome, cidade, idade, idpedidos, datapedido dos pedidos feitos no ano
- de 2026
- 
-3.Crie uma rota chamada '/quantidade_pedidos' que retorne 
- um json no formato '{quantidade_pedidos:100}' com a quantidade de pedidos cadastrados
-na tabela pedidos. USE O COMANDO COUNT(*) para contar as quantidades.
- 
-4 Crie uma rota chamada '/quantidade_pedidos_clientes' que retorne
-um json no formato '{quantidade_pedidos:100}' que retorne 
-todos os clientes e a quantidade de pedidos que cada cliente fez
-*/
-1
-app.get("/cliente _data_pedido", async (req, res) => {
+interface IQuantidadePedido extends RowDataPacket {
+    quantidade_pedidos: number
+}
+//1......
+//Crie uma rota '\cliente_data_pedido' que retorne os clientes e a data que os mesmos fizeram 
+// o pedido. Para realizar isso, utilize o comando inner join para juntar as tabelas. 
+// Utilize o banco de dados chamado  dbteremercado
+
+//
+app.get("/cliente_data_pedido", async (req, res) => {
     try {
         const [resultado, campos] =
-            await connection.execute(`SELECT nome,datapedido FROM clientes c
-    //                       INNER JOIN pedido p ON c.idclientes=p.clientes_idclientes`)
+            await connection.execute(`SELECT nome,datapedido FROM clientes c 
+                      INNER JOIN pedidos p ON c.idclientes=p.clientes_idclientes`)
         console.log(resultado)
         res.status(200).json(resultado)
     } catch (err) {
@@ -39,13 +27,14 @@ app.get("/cliente _data_pedido", async (req, res) => {
         mysqlErrorHandle.validar()
     }
 })
-
-2
+//2 Crie uma rota chamada '\pedidos_2026' que retorne 
+// idclientes, nome, cidade, idade,idpedidos,datapedido dos pedidos feitos no ano
+// de 2026.
 app.get("/pedidos_2026", async (req, res) => {
     try {
         const [resultado, campos] =
-            await connection.execute(`SELECT idclientes, nome, cidade, idade, idclientes, datapedido 
-                        FROM sua tabela WHERE YEAR (datapedido) = 2026`)
+            await connection.execute(`SELECT idclientes, nome, cidade, idade,idpedidos,datapedido FROM clientes c  
+                      INNER JOIN pedidos p ON c.idclientes=p.clientes_idclientes WHERE datapedido BETWEEN '2026-01-01' AND '2026-12-31'`)
         console.log(resultado)
         res.status(200).json(resultado)
     } catch (err) {
@@ -53,26 +42,29 @@ app.get("/pedidos_2026", async (req, res) => {
         mysqlErrorHandle.validar()
     }
 })
-
-3
+//3.Crie uma rota chamada '\quantidade_pedidos' que retorne 
+// um json no formato '{quantidade_pedidos:100}' com a quantidade de pedidos cadastrados
+// na tabela pedidos. USE O COMANDO COUNT(*) para contar as quantidades.
 app.get("/quantidade_pedidos", async (req, res) => {
     try {
         const [resultado, campos] =
-            await connection.execute(`SELECT COUNT(*) AS total FROM pedidos`)
-        console.log(resultado)
-        res.status(200).json(resultado)
+            await connection.execute<IQuantidadePedido[]>(`SELECT COUNT(*) as quantidade_pedidos FROM pedidos`)
+        const [quantidadePedidos] = [...resultado]
+        console.log(quantidadePedidos)
+        res.status(200).json(quantidadePedidos)
     } catch (err) {
         const mysqlErrorHandle = new MysqlErrorHandle(err, res)
         mysqlErrorHandle.validar()
     }
 })
-
-4
+//4 Crie uma rota chamada '\quantidade_pedidos_clientes' que retorne
+// um json no formato '[{nome:"tere",quantidade_pedidos:1000}]' que retorne 
+// todos os clientes e a quantidade de pedidos que cada cliente fez
 app.get("/quantidade_pedidos_clientes", async (req, res) => {
     try {
         const [resultado, campos] =
-            await connection.execute(`SELECT p.nome, COUNT(o.id) AS quantidades_pedidos 
-                FROM pessoa p LEFT JOIN pedidos o ON p.id = o.cliente_id GROUP BY p.nome  `)
+            await connection.execute(`SELECT c.nome as nome,COUNT(*) as quantidade_pedidos FROM clientes c  
+                      INNER JOIN pedidos p ON c.idclientes=p.clientes_idclientes GROUP BY c.nome`)
         console.log(resultado)
         res.status(200).json(resultado)
     } catch (err) {
@@ -81,8 +73,50 @@ app.get("/quantidade_pedidos_clientes", async (req, res) => {
     }
 })
 
+/**
+ * 5) ROTA    /quantidade_produtos_por_cliente
+ * Crie um código que retorne o nome do cliente e a quantidade de produtos que cada pedido tem
+ *    formato    [{nome:"Nome Cliente",idpedido:1,quantidade_produtos:1000}]
+ * 
+ * 
+ * 
+ * 
+ * 6)    /valor_pedido_total
+ * Crie um código que retorne o nome do cliente e o valor total de cada pedido
+ *    [{nome:"Nome Cliente",valor_total:1000}]
+ */
 
 
+5;
+app.get("/quantidade_pedidos_por_clientes", async (req, res) => {
+    try {
+        const [resultado, campos] =
+            await connection.execute(`select c.nome, p.idpedidos AS idpedido, sum (ip.quantidade) 
+                AS quantidade_produtos from clientes c join pedidos p on c.idclientes = p.clientes_idclientes 
+                join itenspedidos ip on p.idpedidos = ip.pedidos_idpedidos group by p.idpedidos, c.nome`)
+        console.log(resultado)
+        res.status(200).json(resultado)
+    } catch (err) {
+        const mysqlErrorHandle = new MysqlErrorHandle(err, res)
+        mysqlErrorHandle.validar()
+    }
+})
+
+6;
+app.get("/valor_pedido_total", async (req, res) => {
+    try {
+        const [resultado, campos] =
+            await connection.execute(`select c.nome, SUM(ip.quantidade * prod.preco) 
+                AS valor_total FROM clientes c JOIN pedidos p ON c.idclientes = p.clientes_idclientes
+                 JOIN itenspedidos ip ON p.idpedidos = ip.pedidos_idpedidos JOIN produtos prod 
+                 ON ip.produtos_idprodutos = prod.idprodutos GROUP BY p.idpedidos, c.nome`)
+        console.log(resultado)
+        res.status(200).json(resultado)
+    } catch (err) {
+        const mysqlErrorHandle = new MysqlErrorHandle(err, res)
+        mysqlErrorHandle.validar()
+    }
+})
 
 
 // app.get("/pessoas", async (req, res) => {
@@ -157,7 +191,7 @@ app.get("/quantidade_pedidos_clientes", async (req, res) => {
 //         const mysqlErrorHandle = new MysqlErrorHandle(err,res)
 //         mysqlErrorHandle.validar()
 //     }
-//})
+// })
 //Criar o servidor
 app.listen(8000, () => {
     console.log("Servidor iniciado na porta 8000")

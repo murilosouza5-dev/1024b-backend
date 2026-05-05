@@ -2,8 +2,10 @@ import express from 'express'
 import MysqlErrorHandle from './mysql_error_handle.js'
 import connection from './mysql_connection_handle.js'
 import type { RowDataPacket } from 'mysql2'
+import cors from 'cors'
 
 const app = express()
+app.use(cors())
 app.use(express.json())
 
 interface IQuantidadePedido extends RowDataPacket {
@@ -118,7 +120,7 @@ app.get("/valor_pedido_total", async (req, res) => {
     }
 })
 
-
+    
 // app.get("/pessoas", async (req, res) => {
 //     try {
 //         const [resultado, campos] =

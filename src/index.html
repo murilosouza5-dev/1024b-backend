@@ -11,7 +11,11 @@
         async function buscaDados(){
           const resposta = await fetch("http://localhost:8000/quantidade_pedidos_por_clientes")
           const dados = await resposta.json()
+          const div = document.getElementById("lista-pedidos")
           console.log(dados)
+          for (let i = 0; i< dados.length; i++) {
+            div.innerText += `${div.innerText} ${dados[i].nome} ${dados[i].valor_total}\n`
+          }
         }
         buscaDados()
     </script>
